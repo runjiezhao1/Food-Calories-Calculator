@@ -44,7 +44,7 @@ def classify_image(image_path, model, label_encoder, device):
     return predicted_label
 
 model_classifier = torch.load("./model/food_classification.pt")
-image_path = "dataset/images/test_set/kimbap/Img_069_0753.jpg"
+image_path = "dataset/images/test_set/apple/apple (1).jpg"
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -73,7 +73,7 @@ def getAreaOfFood(img1):
     contours, hierarchy = cv2.findContours(img_th, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE) #make change here
     cv2.drawContours(img_th, contours, -1, (0,255,0), 3)
     #print("inside get area of food")
-	# find contours. sort. and find the biggest contour. the biggest contour corresponds to the plate and fruit.
+	# find contours. sort. and find the biggest contour. the biggest contour corresponds to the plate and food.
     mask = np.zeros(img.shape, np.uint8)
     largest_areas = sorted(contours, key=cv2.contourArea)
     cv2.drawContours(mask, [largest_areas[-1]], 0, (255,255,255,255), -1)
@@ -89,56 +89,56 @@ def getAreaOfFood(img1):
     cv2.imwrite('{}\\8 mask_plate.jpg'.format(data),mask_plate)
     mask_not_plate = cv2.bitwise_not(mask_plate)
     cv2.imwrite('{}\\9 mask_not_plate.jpg'.format(data),mask_not_plate)
-    fruit_skin = cv2.bitwise_and(img_bigcontour,img_bigcontour,mask = mask_not_plate)
-    cv2.imwrite('{}\\10 fruit_skin.jpg'.format(data),fruit_skin)
+    food_skin = cv2.bitwise_and(img_bigcontour,img_bigcontour,mask = mask_not_plate)
+    cv2.imwrite('{}\\10 food_skin.jpg'.format(data),food_skin)
 
 	#convert to hsv to detect and remove skin pixels
-    hsv_img = cv2.cvtColor(fruit_skin, cv2.COLOR_BGR2HSV)
+    hsv_img = cv2.cvtColor(food_skin, cv2.COLOR_BGR2HSV)
     cv2.imwrite('{}\\11 hsv_img.jpg'.format(data),hsv_img)
     skin = cv2.inRange(hsv_img, np.array([0,10,60]), np.array([10,160,255])) #Scalar(0, 10, 60), Scalar(20, 150, 255)
     cv2.imwrite('{}\\12 skin.jpg'.format(data),skin)
     not_skin = cv2.bitwise_not(skin); #invert skin and black
     cv2.imwrite('{}\\13 not_skin.jpg'.format(data),not_skin)
-    fruit = cv2.bitwise_and(fruit_skin,fruit_skin,mask = not_skin) #get only fruit pixels
-    cv2.imwrite('{}\\14 fruit.jpg'.format(data),fruit)
+    food = cv2.bitwise_and(food_skin,food_skin,mask = not_skin) #get only food pixels
+    cv2.imwrite('{}\\14 food.jpg'.format(data),food)
 
-    fruit_bw = cv2.cvtColor(fruit, cv2.COLOR_BGR2GRAY)
-    cv2.imwrite('{}\\15 fruit_bw.jpg'.format(data),fruit_bw)
-    fruit_bin = cv2.inRange(fruit_bw, 10, 255) #binary of fruit
-    cv2.imwrite('{}\\16 fruit_bw.jpg'.format(data),fruit_bin)
+    food_bw = cv2.cvtColor(food, cv2.COLOR_BGR2GRAY)
+    cv2.imwrite('{}\\15 food_bw.jpg'.format(data),food_bw)
+    food_bin = cv2.inRange(food_bw, 10, 255) #binary of food
+    cv2.imwrite('{}\\16 food_bw.jpg'.format(data),food_bin)
 
 	#erode before finding contours
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
-    erode_fruit = cv2.erode(fruit_bin,kernel,iterations = 1)
-    cv2.imwrite('{}\\17 erode_fruit.jpg'.format(data),erode_fruit)
+    erode_food = cv2.erode(food_bin,kernel,iterations = 1)
+    cv2.imwrite('{}\\17 erode_food.jpg'.format(data),erode_food)
 
-	#find largest contour since that will be the fruit
-    img_th = cv2.adaptiveThreshold(erode_fruit,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,2)
+	#find largest contour since that will be the food
+    img_th = cv2.adaptiveThreshold(erode_food,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,2)
     cv2.imwrite('{}\\18 img_th.jpg'.format(data),img_th)
     contours, hierarchy = cv2.findContours(img_th, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-    mask_fruit = np.zeros(fruit_bin.shape, np.uint8)
+    mask_food = np.zeros(food_bin.shape, np.uint8)
     largest_areas = sorted(contours, key=cv2.contourArea)
-    cv2.drawContours(mask_fruit, [largest_areas[-2]], 0, (255,255,255), -1)
-    cv2.imwrite('{}\\19 mask_fruit.jpg'.format(data),mask_fruit)
+    cv2.drawContours(mask_food, [largest_areas[-2]], 0, (255,255,255), -1)
+    cv2.imwrite('{}\\19 mask_food.jpg'.format(data),mask_food)
 
 	#dilate now
     kernel2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
-    mask_fruit2 = cv2.dilate(mask_fruit,kernel2,iterations = 1)
-    cv2.imwrite('{}\\20 mask_fruit2.jpg'.format(data),mask_fruit2)
-    fruit_final = cv2.bitwise_and(img1,img1,mask = mask_fruit2)
-    cv2.imwrite('{}\\21 fruit_final.jpg'.format(data),fruit_final)
+    mask_food2 = cv2.dilate(mask_food,kernel2,iterations = 1)
+    cv2.imwrite('{}\\20 mask_food2.jpg'.format(data),mask_food2)
+    food_final = cv2.bitwise_and(img1,img1,mask = mask_food2)
+    cv2.imwrite('{}\\21 food_final.jpg'.format(data),food_final)
 
-	#find area of fruit
-    img_th = cv2.adaptiveThreshold(mask_fruit2,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,2)
+	#find area of food
+    img_th = cv2.adaptiveThreshold(mask_food2,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,2)
     cv2.imwrite('{}\\22 img_th.jpg'.format(data),img_th)
     contours, hierarchy = cv2.findContours(img_th, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     largest_areas = sorted(contours, key=cv2.contourArea)
-    fruit_contour = largest_areas[-2]
-    fruit_area = cv2.contourArea(fruit_contour)
+    food_contour = largest_areas[-2]
+    food_area = cv2.contourArea(food_contour)
 
 
 	#finding the area of skin. find area of biggest contour
-    skin2 = skin - mask_fruit2
+    skin2 = skin - mask_food2
     cv2.imwrite('{}\\23 skin2.jpg'.format(data),skin2)
 	#erode before finding contours
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
@@ -168,16 +168,16 @@ def getAreaOfFood(img1):
     skin_area = cv2.contourArea(box)
 
 
-    return fruit_area,fruit_bin ,fruit_final,skin_area, fruit_contour, pix_to_cm_multiplier
+    return food_area,food_bin ,food_final,skin_area, food_contour, pix_to_cm_multiplier
 
 #caleries
 import cv2
 import numpy as np
 food_dict = {"apple":1,"bibimbap":2,"bulgogi":3,"chocolate_cake":4,"fried_egg":5,"hamburger":6,"jajangmyeon":7,"kimbap":8,"kimchi_stew":9,"pizza":10,"ramen":11,"sandwich":12,"steak":13,"sushi":14}
 #density - gram / cm^3
-density_dict = { 1:0.609, 2:0.94, 3:0.641,  4:0.641,5:0.513, 6:0.482,7:0.481,8:0.234,9:0.497,10:0.677,11:0.456,12:0.765,13:0.343,14:0.245}
+density_dict = { 1:0.9, 2:0.94, 3:0.641,  4:0.641,5:0.513, 6:0.482,7:0.481,8:0.234,9:0.497,10:0.677,11:0.456,12:0.765,13:0.343,14:0.245}
 #kcal
-calorie_dict = { 1:52, 2:89,  3:41,4:16,5:40,6:47,7:18, 8:23,9:18,10:90,11:87,12:45,13:80,14:100}
+calorie_dict = { 1:0.00052, 2:0.89, 3:0.41,4:0.16,5:0.40,6:0.47,7:0.18, 8:0.23,9:0.18,10:0.90,11:0.87,12:0.45,13:0.80,14:0.10}
 #skin of photo to real multiplier
 skin_multiplier = 5*2.3
 
@@ -188,38 +188,38 @@ def getCalorie(label, volume): #volume in cm^3
 	calorie_tot = (calorie/100.0)*mass
 	return mass, calorie_tot, calorie #calorie per 100 grams
 
-def getVolume(label, area, skin_area, pix_to_cm_multiplier, fruit_contour):
-	area_fruit = (area/skin_area)*skin_multiplier #area in cm^2
+def getVolume(label, area, skin_area, pix_to_cm_multiplier, food_contour):
+	area_food = (area/skin_area)*skin_multiplier #area in cm^2
 	label = int(label)
 	volume = 100
     #sphere
 	if label == 1 or label == 5 or label == 7 or label == 6 or label == 12 or label == 13 or label == 14: 
-		radius = np.sqrt(area_fruit/np.pi)
+		radius = np.sqrt(area_food/np.pi)
 		volume = (4/3)*np.pi*radius*radius*radius
-		#print (area_fruit, radius, volume, skin_area)
+		#print (area_food, radius, volume, skin_area)
 
     #column
 	if label == 2 or label == 4 or label == 3 or label == 8 or label == 9 or label == 10 or label == 1: 
-		fruit_rect = cv2.minAreaRect(fruit_contour)
-		height = max(fruit_rect[1])*pix_to_cm_multiplier
-		radius = area_fruit/(2.0*height)
+		food_rect = cv2.minAreaRect(food_contour)
+		height = max(food_rect[1])*pix_to_cm_multiplier
+		radius = area_food/(2.0*height)
 		volume = np.pi*radius*radius*height
 
-	if (label==4 and area_fruit < 30) : 
-		volume = area_fruit*0.5 
+	if (label==4 and area_food < 30) : 
+		volume = area_food*0.5 
 
 	return volume
 
 def calories(result,img):
     img_path =img
-    fruit_areas,final_f,areaod,skin_areas, fruit_contours, pix_cm = getAreaOfFood(img_path)
-    volume = getVolume(result, fruit_areas, skin_areas, pix_cm, fruit_contours)
+    food_areas,final_f,areaod,skin_areas, food_contours, pix_cm = getAreaOfFood(img_path)
+    volume = getVolume(result, food_areas, skin_areas, pix_cm, food_contours)
     mass, cal, cal_100 = getCalorie(result, volume)
-    fruit_volumes=volume
-    fruit_calories=cal
-    fruit_calories_100grams=cal_100
-    fruit_mass=mass
-    return fruit_calories
+    food_volumes=volume
+    food_calories=cal
+    food_calories_100grams=cal_100
+    food_mass=mass
+    return food_calories
 
 import tflearn
 from tflearn.layers.conv import conv_2d, max_pool_2d
@@ -227,7 +227,7 @@ from tflearn.layers.core import input_data, dropout, fully_connected
 from tflearn.layers.estimator import regression
 import tensorflow as tf
 
-def get_model(IMG_SIZE,no_of_fruits,LR):
+def get_model(IMG_SIZE,no_of_foods,LR):
 	try:
 		tf.reset_default_graph()
 	except:
@@ -255,7 +255,7 @@ def get_model(IMG_SIZE,no_of_fruits,LR):
 	convnet = fully_connected(convnet, 1024, activation='relu')
 	convnet = dropout(convnet, 0.8)
 
-	convnet = fully_connected(convnet, no_of_fruits, activation='softmax')
+	convnet = fully_connected(convnet, no_of_foods, activation='softmax')
 	convnet = regression(convnet, optimizer='adam', learning_rate=LR, loss='categorical_crossentropy', name='targets')
 
 	model = tflearn.DNN(convnet, tensorboard_dir='log')
@@ -268,13 +268,13 @@ import numpy as np
 
 IMG_SIZE = 256
 LR = 1e-3
-no_of_fruits=14
+no_of_foods=14
 
 MODEL_NAME = 'Fruits_dectector-{}-{}.model'.format(LR, 'Allconv-basic')
 
 model_save_at=os.path.join("model",MODEL_NAME)
 
-model_mask=get_model(IMG_SIZE,no_of_fruits,LR)
+model_mask=get_model(IMG_SIZE,no_of_foods,LR)
 
 model_mask.load(model_save_at)
 labels=list(np.load('labels.npy'))
@@ -285,7 +285,7 @@ model_out=model_mask.predict([img1])
 result=np.argmax(model_out)
 result = food_dict[predicted_label]
 print("result", result)
-cal=round(calories(result+1,img),2)
+cal=round(calories(result,img),2)
 
 import matplotlib.pyplot as plt
 plt.imshow(img)
