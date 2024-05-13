@@ -1,12 +1,60 @@
-# -*- coding: utf-8 -*-
-# Commented out IPython magic to ensure Python compatibility.
-# %cd Food-Calories-Estimation-Using-Image-Processing
-
 #image_segment
 import cv2
 import numpy as np
 import os
 
+import torch
+from PIL import Image
+from torchvision import transforms
+
+class Label_encoder:
+    def __init__(self, labels):
+        labels = list(set(labels))
+        self.labels = {label: idx for idx, label in enumerate(classes)}
+
+    def get_label(self, idx):
+        return list(self.labels.keys())[idx]
+
+    def get_idx(self, label):
+        return self.labels[label]
+
+def classify_image(image_path, model, label_encoder, device):
+    # Load and preprocess the input image
+    image = Image.open(image_path)
+    preprocess = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    image_tensor = preprocess(image).unsqueeze(0).to(device)
+
+    # Perform prediction
+    with torch.no_grad():
+        model.eval()
+        output = model(image_tensor)
+
+    # Get predicted class index
+    _, predicted_idx = torch.max(output, 1)
+    predicted_idx = predicted_idx.item()
+
+    # Map index to class name
+    predicted_label = label_encoder.get_label(predicted_idx)
+
+    return predicted_label
+
+model_classifier = torch.load("./model/food_classification.pt")
+image_path = "dataset/images/test_set/kimbap/Img_069_0753.jpg"
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+classes = open("./dataset/classes.txt", 'r').read().splitlines()
+label_encoder = Label_encoder(classes)
+
+predicted_label = classify_image(image_path, model_classifier, label_encoder, device)
+print("Predicted Label:", predicted_label)
+
+#get the maskrcnn and image volume here
 def getAreaOfFood(img1):
     data=os.path.join(os.getcwd(),"images")
     if os.path.exists(data):
@@ -125,10 +173,11 @@ def getAreaOfFood(img1):
 #caleries
 import cv2
 import numpy as np
+food_dict = {"apple":1,"bibimbap":2,"bulgogi":3,"chocolate_cake":4,"fried_egg":5,"hamburger":6,"jajangmyeon":7,"kimbap":8,"kimchi_stew":9,"pizza":10,"ramen":11,"sandwich":12,"steak":13,"sushi":14}
 #density - gram / cm^3
-density_dict = { 1:0.609, 2:0.94, 3:0.641,  4:0.641,5:0.513, 6:0.482,7:0.481}
+density_dict = { 1:0.609, 2:0.94, 3:0.641,  4:0.641,5:0.513, 6:0.482,7:0.481,8:0.234,9:0.497,10:0.677,11:0.456,12:0.765,13:0.343,14:0.245}
 #kcal
-calorie_dict = { 1:52, 2:89,  3:41,4:16,5:40,6:47,7:18 }
+calorie_dict = { 1:52, 2:89,  3:41,4:16,5:40,6:47,7:18, 8:23,9:18,10:90,11:87,12:45,13:80,14:100}
 #skin of photo to real multiplier
 skin_multiplier = 5*2.3
 
@@ -143,24 +192,26 @@ def getVolume(label, area, skin_area, pix_to_cm_multiplier, fruit_contour):
 	area_fruit = (area/skin_area)*skin_multiplier #area in cm^2
 	label = int(label)
 	volume = 100
-	if label == 1 or label == 5 or label == 7 or label == 6 : #sphere-apple,tomato,orange,kiwi,onion
+    #sphere
+	if label == 1 or label == 5 or label == 7 or label == 6 or label == 12 or label == 13 or label == 14: 
 		radius = np.sqrt(area_fruit/np.pi)
 		volume = (4/3)*np.pi*radius*radius*radius
 		#print (area_fruit, radius, volume, skin_area)
 
-	if label == 2 or label == 4 or (label == 3 and area_fruit > 30): #cylinder like banana, cucumber, carrot
+    #column
+	if label == 2 or label == 4 or label == 3 or label == 8 or label == 9 or label == 10 or label == 1: 
 		fruit_rect = cv2.minAreaRect(fruit_contour)
 		height = max(fruit_rect[1])*pix_to_cm_multiplier
 		radius = area_fruit/(2.0*height)
 		volume = np.pi*radius*radius*height
 
-	if (label==4 and area_fruit < 30) : # carrot
-		volume = area_fruit*0.5 #assuming width = 0.5 cm
+	if (label==4 and area_fruit < 30) : 
+		volume = area_fruit*0.5 
 
 	return volume
 
 def calories(result,img):
-    img_path =img # "C:/Users/M Sc-2/Desktop/dataset/FooD/"+str(j)+"_"+str(i)+".jpg"
+    img_path =img
     fruit_areas,final_f,areaod,skin_areas, fruit_contours, pix_cm = getAreaOfFood(img_path)
     volume = getVolume(result, fruit_areas, skin_areas, pix_cm, fruit_contours)
     mass, cal, cal_100 = getCalorie(result, volume)
@@ -168,10 +219,8 @@ def calories(result,img):
     fruit_calories=cal
     fruit_calories_100grams=cal_100
     fruit_mass=mass
-    #print("\nfruit_volumes",fruit_volumes,"\nfruit_calories",fruit_calories,"\nruit_calories_100grams",fruit_calories_100grams,"\nfruit_mass",fruit_mass)
     return fruit_calories
 
-#cnn_model
 import tflearn
 from tflearn.layers.conv import conv_2d, max_pool_2d
 from tflearn.layers.core import input_data, dropout, fully_connected
@@ -213,38 +262,33 @@ def get_model(IMG_SIZE,no_of_fruits,LR):
 
 	return model
 
-#demo
 import os
 import cv2
 import numpy as np
 
 IMG_SIZE = 256
 LR = 1e-3
-#num of fruits to be 14 or 7
 no_of_fruits=14
 
 MODEL_NAME = 'Fruits_dectector-{}-{}.model'.format(LR, 'Allconv-basic')
 
 model_save_at=os.path.join("model",MODEL_NAME)
 
-model=get_model(IMG_SIZE,no_of_fruits,LR)
+model_mask=get_model(IMG_SIZE,no_of_fruits,LR)
 
-model.load(model_save_at)
+model_mask.load(model_save_at)
 labels=list(np.load('labels.npy'))
 print("labels ",labels)
-test_data='./dataset1/images/Apple/1_4.jpg' #test_image.JPG'
-#test_data = './dataset/other/Test_Images/1_21.jpg'
-img=cv2.imread(test_data)
+img=cv2.imread(image_path)
 img1=cv2.resize(img,(IMG_SIZE,IMG_SIZE))
-model_out=model.predict([img1])
+model_out=model_mask.predict([img1])
 result=np.argmax(model_out)
+result = food_dict[predicted_label]
 print("result", result)
-result = 1
-name=labels[1]
 cal=round(calories(result+1,img),2)
 
 import matplotlib.pyplot as plt
 plt.imshow(img)
-plt.title('{}({}kcal)'.format(name,cal))
+plt.title('{}({}kcal)'.format(predicted_label,cal))
 plt.axis('off')
 plt.show()

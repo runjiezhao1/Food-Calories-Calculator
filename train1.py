@@ -1,19 +1,12 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Mar 28 09:31:30 2019
-
-@author:vinayak sable 
-"""
-
-import numpy as np         # dealing with arrays
-import os                  # dealing with directories
-from random import shuffle # mixing up or currently ordered data that might lead our network astray in training.
+import numpy as np        
+import os                  
+from random import shuffle 
 import glob
 import cv2
 from cnn_model import get_model
 
-path = './dataset1/images'
-IMG_SIZE = 400
+path = './Myfood/images/train_set'
+IMG_SIZE = 256
 LR = 0.001
 #Fruits_dectector-{}-{}.model
 MODEL_NAME = 'Fruits_dectector-{}-{}.model'.format(LR, 'Allconv-basic')
@@ -35,15 +28,14 @@ def create_train_data(path):
                 break
             k=k+1
             img = cv2.imread(j)
+            print(j)
             img = cv2.resize(img, (IMG_SIZE,IMG_SIZE))
             training_data.append([np.array(img),np.array(label)])
-    #np.save('training_{}_{}_{}.npz'.format(no_of_fruits,no_of_images,IMG_SIZE),training_data)
     shuffle(training_data)
     return training_data,folders
 
 training_data,labels=create_train_data(path)
 print("labels ", labels)
-# training_data=np.load('training_{}_{}_{}.npz'.format(no_of_fruits,no_of_images,IMG_SIZE))
 size=int(len(training_data)*percentage)
 train = training_data[:-size]
 test=training_data[-size:]
