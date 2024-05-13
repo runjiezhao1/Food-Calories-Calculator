@@ -1,0 +1,2 @@
+model_checkpoint_path: "C:\\Study\\Spring2024\\CIS519\\GP\\Food-Calories-Calculator\\model\\Fruits_dectector-0.001-Allconv-basic.model"
+all_model_checkpoint_paths: "C:\\Study\\Spring2024\\CIS519\\GP\\Food-Calories-Calculator\\model\\Fruits_dectector-0.001-Allconv-basic.model"
