@@ -6,3 +6,4 @@ log/
 __pycache__/
 __init__.py
 labels.npy
+Food_Calorie_Estimation-main/
