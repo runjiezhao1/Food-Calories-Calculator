@@ -10,9 +10,9 @@
 
 ## Final Result
 
-Result Image:
+Result Image:<br />
 
 ![alt text](./result_images/final_result.png)
 
-Mask Image:
+Mask Image:<br />
 ![alt text](./result_images/19%20mask_food.jpg)
